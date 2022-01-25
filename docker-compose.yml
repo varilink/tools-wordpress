@@ -1,0 +1,67 @@
+version: "3.6"
+
+services:
+
+  wordpress:
+
+    image: wordpress:${WORDPRESS_TAG}
+
+    container_name: ${COMPOSE_PROJECT_NAME}
+
+    depends_on:
+      - db
+      - proxy
+
+    environment:
+      WORDPRESS_DB_HOST: ${COMPOSE_PROJECT_NAME}_db
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DEBUG: 1
+
+    networks:
+      - proxy
+      - backend
+
+    volumes:
+      - wordpress:/var/www/html
+      - ./${COMPOSE_PROJECT_NAME}-wordpress/theme:/var/www/html/wp-content/themes/wp-bootstrap-starter-child
+
+  db:
+
+    image: mariadb:${MARIADB_TAG}
+
+    container_name: ${COMPOSE_PROJECT_NAME}_db
+
+    environment:
+      - MYSQL_DATABASE=wordpress
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+
+    networks:
+      - backend
+
+    volumes:
+      - ./backup:/docker-entrypoint-initdb.d:ro
+
+  wp-cli:
+
+    build: .
+
+    image: varilink/wp-cli
+
+    user: "33:33"
+
+    networks:
+      - backend
+
+    volumes:
+      - ./backup:/backup:ro
+      - wordpress:/var/www/html
+
+volumes:
+  wordpress:
+
+networks:
+  backend:
+#  proxy:
+#    external: true
+#    name: tools_proxy
