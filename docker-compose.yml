@@ -24,7 +24,6 @@ services:
 
     volumes:
       - wordpress:/var/www/html
-      - ./${COMPOSE_PROJECT_NAME}-wordpress/theme:/var/www/html/wp-content/themes/wp-bootstrap-starter-child
 
   db:
 
@@ -44,9 +43,12 @@ services:
 
   wp-cli:
 
-    build: .
+    build: ./tools-wordpress
 
     image: varilink/wp-cli
+
+    environment:
+      - COMPOSE_PROJECT_NAME
 
     user: "33:33"
 
@@ -62,6 +64,3 @@ volumes:
 
 networks:
   backend:
-#  proxy:
-#    external: true
-#    name: tools_proxy
