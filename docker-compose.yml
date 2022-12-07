@@ -43,7 +43,7 @@ services:
 
   wp-cli:
 
-    build: ./tools-wordpress
+    build: ./tools-wordpress/wp-cli
 
     image: varilink/wp-cli
 
