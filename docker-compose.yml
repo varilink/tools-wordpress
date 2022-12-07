@@ -41,9 +41,9 @@ services:
 
   wp-cli:
 
-    build: ./tools-wordpress/wp-cli
+    build: ./tools/wordpress/wp-cli
 
-    image: varilink/wp-cli
+    image: varilink/tools/wp-cli
 
     environment:
       COMPOSE_PROJECT_NAME:
