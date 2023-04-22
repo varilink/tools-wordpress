@@ -1,58 +1,76 @@
-#!/usr/bin/env bash
+# wp-cli/docker-entrypoint.sh
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
 
 # Wrapper script to WP-CLI that provides several shortcut "helper scripts" as
 # well as the native fuctionality of WP-CLI itself.
 
-set -e
+function helper_menu {
 
-if [ "$1" = '_' ]
-  then
+  # Show a menu of the available helpers for the user to select one.
 
-    # I've been called with the single argument '_', which means "Show me the
-    # available helpers so that I may select one of them."
+  echo 'Helpers available'
+  PS3='Helper? '
+  select helper in                                                             \
+    _correct-site-url                                                          \
+    _create-admin-user                                                         \
+    _export-post                                                               \
+    _import-post                                                               \
+    _install-importer                                                          \
+    _remove-contact-form-recaptcha-integration                                 \
+    _restore-media                                                             \
+    _restore-plugin                                                            \
+    _restore-theme                                                             \
+    _exit
+  do
+    if [[ -n $helper ]]
+      then
+        command=$helper
+        break
+      else
+        echo 'Invalid selection, enter the number of a helper in the list'
+    fi
+  done
 
-    echo 'Helpers available'
-    PS3='Helper? '
-    select HELPER in                                                           \
-      _create-admin-user                                                       \
-      _correct_site_url                                                        \
-      _export_post                                                             \
-      _import_post                                                             \
-      _install_importer                                                        \
-      _remove-contact-form-recaptcha-integration                               \
-      _restore-from-backup                                                     \
-      _restore_media                                                           \
-      _restore_plugin                                                          \
-      _restore_theme                                                           \
-      _exit
-    do
-      if [[ -n $HELPER ]]
-        then
-          set -- "$HELPER"
-          break
-        else
-          echo 'Invalid selection, enter the number of a helper in the list'
-      fi
-    done
-
-fi
+}
 
 case $1 in
 
-  _create-admin-user)
+  _correct-site-url | _create-admin-user | _export-post | _import-post |       \
+  _install-importer | _remove-contact-form-recaptcha-integration |             \
+  _restore-media | _restore-media | _restore-plugin | _restore-theme | _exit)
 
-    # Create an admin user for use within the container
-
-    # It doesn't matter that the credentials are not secure since we're only
-    # going to use this user on the developer desktop.
-    php /wp-cli.phar                                                           \
-      --allow-root                                                             \
-      user create admin admin@localhost.localdomain                            \
-      --role=administrator --user_pass=password
+    command=$1
 
   ;;
 
-  _correct_site_url)
+  _)
+
+    helper_menu
+
+  ;;
+
+  _*)
+
+    # The user has probably tried to specify a helper via the underscore prefix
+    # but they've not then provided a helper name that we recognise.
+
+    echo 'That helper name is not recognised, select from this menu'
+    helper_menu
+
+  ;;
+
+  *)
+
+    command=$1
+
+  ;;
+
+esac
+
+case $command in
+
+  _correct-site-url)
 
     echo "Change the site's URL in the database to match the container URL"
     IFS=':'
@@ -61,20 +79,31 @@ case $1 in
     do
       echo                                                                     \
         "Replace https://$environment.$DOMAIN with http://$COMPOSE_PROJECT_NAME"
-      php /wp-cli.phar --allow-root search-replace --report-changed-only       \
+      gosu www-data php /wp-cli.phar search-replace --report-changed-only      \
         https://$environment.$DOMAIN http://$COMPOSE_PROJECT_NAME
     done
 
   ;;
 
-  _export_post)
+  _create-admin-user)
+
+    # Create an admin user for use within the container
+
+    # It doesn't matter that the credentials are not secure since we're only
+    # going to use this user on the developer desktop.
+    gosu www-data php /wp-cli.phar                                             \
+      user create admin admin@localhost.localdomain                            \
+      --role=administrator --user_pass=password
+
+  ;;
+
+  _export-post)
 
     cd /posts
     read -p 'Post name: ' post_name
 
     # NOTE: The post list requires that the post is published
-    php /wp-cli.phar export                                                    \
-      --allow-root                                                             \
+    gosu posts php /wp-cli.phar export                                         \
       --path=/var/www/html/                                                    \
       --post__in="$(                                                           \
           php /wp-cli.phar post list                                           \
@@ -85,28 +114,34 @@ case $1 in
         )"                                                                     \
       --filename_format=${post_name}.xml
 
-    chown ${UID}:${GID} /posts/${post_name}.xml
+  ;;
+
+  _import-post)
+
+    echo 'Post files available'
+    PS3='Post file? '
+    select post_file in `ls /posts` exit
+    do
+
+      if [[ "$post_file" != 'exit' ]]
+      then
+
+        gosu www-data php /wp-cli.phar import                                  \
+          --path=/var/www/html/                                                \
+          /posts/${post_file}                                                  \
+          --authors=skip
+
+      fi
+
+      break
+
+    done
 
   ;;
 
-  _import_post)
+  _install-importer)
 
-    cd /posts
-    read -p 'Post name: ' post_name
-
-    php /wp-cli.phar import                                                    \
-      --allow-root                                                             \
-      --path=/var/www/html/                                                    \
-      ${post_name}.xml                                                         \
-      --authors=skip
-
-    chown ${UID}:${GID} /posts/${post_name}.xml
-
-  ;;
-
-  _install_importer)
-
-    php /wp-cli.phar                                                           \
+    gosu www-data php /wp-cli.phar                                             \
       --allow-root                                                             \
       plugin install wordpress-importer --activate
 
@@ -116,11 +151,11 @@ case $1 in
 
     # Remove Contact Form 7 integration with reCAPTCHA
 
-    php /wp-cli.phar option patch delete wpcf7 recaptcha
+    gosu www-data php /wp-cli.phar option patch delete wpcf7 recaptcha
 
   ;;
 
-  _restore_media)
+  _restore-media)
 
     # Find the archive file of website's home folder
     archive=$(find /backup -name "*.tar.gz")
@@ -131,7 +166,7 @@ case $1 in
         mkdir -p /var/www/html/wp-content/uploads
     fi
 
-    tar                                                                        \
+    gosu www-data tar                                                          \
       --extract                                                                \
       --file=$archive                                                          \
       --directory=/var/www/html/wp-content/uploads                             \
@@ -139,11 +174,9 @@ case $1 in
       --wildcards                                                              \
       "**wp-content/uploads/**"
 
-    chown -R www-data:www-data /var/www/html/wp-content/uploads/*
-
   ;;
 
-  _restore_plugin)
+  _restore-plugin)
 
     # Find the archive file of website's home folder
     archive=$(find /backup -name "*.tar.gz")
@@ -177,7 +210,7 @@ case $1 in
       fi
     done
 
-    tar                                                                        \
+    gosu www-data tar                                                          \
       --extract                                                                \
       --file=$archive                                                          \
       --directory=/var/www/html/wp-content/plugins                             \
@@ -187,7 +220,7 @@ case $1 in
 
   ;;
 
-  _restore_theme)
+  _restore-theme)
 
     # Find the archive file of website's home folder
     archive=$(find /backup -name "*.tar.gz")
@@ -221,7 +254,7 @@ case $1 in
       fi
     done
 
-    tar                                                                        \
+    gosu www-data tar                                                          \
       --extract                                                                \
       --file=$archive                                                          \
       --directory=/var/www/html/wp-content/themes                              \
@@ -282,11 +315,15 @@ case $1 in
 
   _exit)
 
+    # The user has most probably entered the option number for "_exit" in the
+    # helper selection menu. Just do nothing and drop out of the bottom of this
+    # case statement.
+
   ;;
 
   *)
 
-    php /wp-cli.phar --allow-root $@
+    gosu www-data php /wp-cli.phar $@
 
   ;;
 

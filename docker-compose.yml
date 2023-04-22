@@ -1,9 +1,20 @@
+# ------------------------------------------------------------------------------
+# docker-compose.yml
+# ------------------------------------------------------------------------------
+
+# Implements wordpress, db and wp-cli Docker Compose services that are exposed
+# to any project using this tool by including this file in its COMPOSE_FILE
+# path.
+
 version: "3.6"
 
 services:
 
   wordpress:
 
+    # This image is explicitly named so that the proxy server implemented by our
+    # proxy tool (https://github.com/varilink/tools-proxy) can proxy requests to
+    # it by host name.
     image: wordpress:${WORDPRESS_TAG}
 
     container_name: ${COMPOSE_PROJECT_NAME}
@@ -28,6 +39,8 @@ services:
 
   db:
 
+    # This image is explicitly named so that the wordpress service above can
+    # connect to its database by host name.
     image: mariadb:${MARIADB_TAG}
 
     container_name: ${COMPOSE_PROJECT_NAME}_db
@@ -43,8 +56,6 @@ services:
 
     build: ./tools/wordpress/wp-cli
 
-    image: varilink/tools/wp-cli
-
     environment:
       COMPOSE_PROJECT_NAME:
       WORDPRESS_DB_HOST: ${COMPOSE_PROJECT_NAME}_db
@@ -53,7 +64,7 @@ services:
       WORDPRESS_DB_PASSWORD: '' # prevent fallback to 'example_password'
 
     env_file:
-      - host-user.env
+      - wp-cli.env
 
     networks:
       - backend
