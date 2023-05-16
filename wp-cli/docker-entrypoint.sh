@@ -36,9 +36,10 @@ function helper_menu {
 
 case $1 in
 
-  _correct-site-url | _create-admin-user | _export-post | _import-post |       \
-  _install-importer | _remove-contact-form-recaptcha-integration |             \
-  _restore-media | _restore-media | _restore-plugin | _restore-theme | _exit)
+  _bash | _correct-site-url | _create-admin-user | _export-post |              \
+  _import-post | _install-importer |                                           \
+  _remove-contact-form-recaptcha-integration | _restore-media |                \
+  _restore-media | _restore-plugin | _restore-theme | _exit)
 
     command=$1
 
@@ -70,6 +71,12 @@ esac
 
 case $command in
 
+  _bash)
+
+    gosu www-data bash $2
+
+  ;;
+
   _correct-site-url)
 
     echo "Change the site's URL in the database to match the container URL"
@@ -79,7 +86,7 @@ case $command in
     do
       echo                                                                     \
         "Replace https://$environment.$DOMAIN with http://$COMPOSE_PROJECT_NAME"
-      gosu www-data php /wp-cli.phar search-replace --report-changed-only      \
+      gosu www-data wp search-replace --report-changed-only      \
         https://$environment.$DOMAIN http://$COMPOSE_PROJECT_NAME
     done
 
@@ -91,7 +98,7 @@ case $command in
 
     # It doesn't matter that the credentials are not secure since we're only
     # going to use this user on the developer desktop.
-    gosu www-data php /wp-cli.phar                                             \
+    gosu www-data wp                                                           \
       user create admin admin@localhost.localdomain                            \
       --role=administrator --user_pass=password
 
@@ -103,10 +110,10 @@ case $command in
     read -p 'Post name: ' post_name
 
     # NOTE: The post list requires that the post is published
-    gosu posts php /wp-cli.phar export                                         \
+    gosu posts wp export                                                       \
       --path=/var/www/html/                                                    \
       --post__in="$(                                                           \
-          php /wp-cli.phar post list                                           \
+          wp post list                                                         \
             --allow-root                                                       \
             --path=/var/www/html/                                              \
             --name=$post_name                                                  \
@@ -126,7 +133,7 @@ case $command in
       if [[ "$post_file" != 'exit' ]]
       then
 
-        gosu www-data php /wp-cli.phar import                                  \
+        gosu www-data wp import                                                \
           --path=/var/www/html/                                                \
           /posts/${post_file}                                                  \
           --authors=skip
@@ -141,7 +148,7 @@ case $command in
 
   _install-importer)
 
-    gosu www-data php /wp-cli.phar                                             \
+    gosu www-data wp                                                           \
       --allow-root                                                             \
       plugin install wordpress-importer --activate
 
@@ -151,7 +158,7 @@ case $command in
 
     # Remove Contact Form 7 integration with reCAPTCHA
 
-    gosu www-data php /wp-cli.phar option patch delete wpcf7 recaptcha
+    gosu www-data wp option patch delete wpcf7 recaptcha
 
   ;;
 
@@ -323,7 +330,7 @@ case $command in
 
   *)
 
-    gosu www-data php /wp-cli.phar $@
+    gosu www-data wp $@
 
   ;;
 

@@ -14,22 +14,26 @@ LABEL maintainer="david.williamson@varilink.co.uk"
 # the host that runs this image. Otherwise we run wp-cli as www-data, since this
 # is the user that owns the WordPress files within the container.
 ARG UID=1000
+ARG PHAR=https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar
+ARG PHAR=${PHAR}/wp-cli.phar
 
 RUN                                                                            \
   apt-get update                                                            && \
   apt-get --no-install-recommends --yes install                                \
     ca-certificates                                                            \
     gosu                                                                       \
+    jq                                                                         \
     less                                                                       \
     php                                                                        \
+    php-imagick                                                                \
     php-mysql                                                                  \
     php-xml                                                                    \
     wget                                                                    && \
   mkdir -p /var/www/.wp-cli                                                 && \
   chown www-data:www-data /var/www/.wp-cli                                  && \
   useradd --create-home --uid ${UID} posts                                  && \
-  wget --directory-prefix=/                                                    \
-    https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+  wget --output-document=/usr/local/bin/wp ${PHAR}                          && \
+  chmod +x /usr/local/bin/wp
 
 COPY docker-entrypoint.sh /
 
