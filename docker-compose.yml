@@ -63,9 +63,6 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: '' # prevent fallback to 'example_password'
 
-    env_file:
-      - wp-cli.env
-
     networks:
       - backend
 
