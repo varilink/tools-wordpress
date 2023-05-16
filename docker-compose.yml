@@ -30,10 +30,6 @@ services:
       WORDPRESS_DB_PASSWORD: '' # prevent fallback to 'example_password'
       WORDPRESS_DEBUG: 1
 
-    networks:
-      - proxy
-      - backend
-
     volumes:
       - wordpress:/var/www/html
 
@@ -49,9 +45,6 @@ services:
       - MYSQL_DATABASE=wordpress
       - MYSQL_ALLOW_EMPTY_PASSWORD=yes
 
-    networks:
-      - backend
-
   wp-cli:
 
     build: ./tools/wordpress/wp-cli
@@ -63,15 +56,9 @@ services:
       WORDPRESS_DB_USER: root
       WORDPRESS_DB_PASSWORD: '' # prevent fallback to 'example_password'
 
-    networks:
-      - backend
-
     volumes:
       - wordpress:/var/www/html
       - ./posts:/posts
 
 volumes:
   wordpress:
-
-networks:
-  backend:
