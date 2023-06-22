@@ -15,7 +15,7 @@ services:
     # This image is explicitly named so that the proxy server implemented by our
     # proxy tool (https://github.com/varilink/tools-proxy) can proxy requests to
     # it by host name.
-    image: wordpress:${WORDPRESS_TAG}
+    image: wordpress:${WORDPRESS_TAG:-latest}
 
     container_name: ${COMPOSE_PROJECT_NAME}
 
