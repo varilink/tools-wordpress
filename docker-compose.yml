@@ -60,5 +60,16 @@ services:
       - wordpress:/var/www/html
       - ./posts:/posts
 
+  pma:
+
+    image: phpmyadmin
+
+    container_name: ${COMPOSE_PROJECT_NAME}_pma
+
+    environment:
+      PMA_HOST: ${COMPOSE_PROJECT_NAME}_db
+      PMA_USER: root
+      PMA_PASWORD: ''
+
 volumes:
   wordpress:
