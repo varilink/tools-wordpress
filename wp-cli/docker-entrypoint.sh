@@ -330,7 +330,7 @@ case $command in
 
   *)
 
-    gosu www-data wp $@
+    gosu www-data wp "$@"
 
   ;;
 
