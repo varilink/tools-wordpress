@@ -32,6 +32,9 @@ services:
 
     environment:
       <<: *wp-env
+      # Disable automatic updates for WordPress in our desktop environment.
+      WORDPRESS_CONFIG_EXTRA: |-
+        define('WP_AUTO_UPDATE_CORE', false);
       WORDPRESS_DEBUG: 1
 
     volumes:
