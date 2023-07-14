@@ -2,9 +2,11 @@
 # docker-compose.yml
 # ------------------------------------------------------------------------------
 
-# Implements wordpress, db and wp-cli Docker Compose services that are exposed
-# to any project using this tool by including this file in its COMPOSE_FILE
-# path.
+# Implements wordpress, db, wp-cli and pma Docker Compose services that are
+# exposed to any project using this tool by including this file in its
+# COMPOSE_FILE path.
+
+---
 
 version: "3.6"
 
@@ -35,6 +37,7 @@ services:
       # Disable automatic updates for WordPress in our desktop environment.
       WORDPRESS_CONFIG_EXTRA: |-
         define('WP_AUTO_UPDATE_CORE', false);
+      # Turn WordPress debugging on in our desktop environment.
       WORDPRESS_DEBUG: 1
 
     volumes:
