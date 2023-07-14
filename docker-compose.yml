@@ -70,6 +70,9 @@ services:
 
     container_name: ${COMPOSE_PROJECT_NAME}_pma
 
+    depends_on:
+      - db
+
     environment:
       PMA_HOST: ${COMPOSE_PROJECT_NAME}_db
       PMA_USER: root
