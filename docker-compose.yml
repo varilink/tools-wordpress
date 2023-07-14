@@ -44,7 +44,7 @@ services:
 
     # This image is explicitly named so that the wordpress service above can
     # connect to its database by host name.
-    image: mariadb:${MARIADB_TAG}
+    image: mariadb:${MARIADB_TAG:-latest}
 
     container_name: ${COMPOSE_PROJECT_NAME}_db
 
