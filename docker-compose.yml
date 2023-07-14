@@ -62,7 +62,7 @@ services:
 
     volumes:
       - wordpress:/var/www/html
-      - ./posts:/posts
+      - ./wxr:/wxr
 
   pma:
 
