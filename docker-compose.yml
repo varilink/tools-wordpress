@@ -65,6 +65,7 @@ services:
 
     volumes:
       - wordpress:/var/www/html
+      - ./wordpress/wp-cli-scripts:/scripts
       - ./wxr:/wxr
 
   pma:
