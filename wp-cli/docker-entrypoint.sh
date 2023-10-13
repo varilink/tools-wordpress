@@ -36,7 +36,7 @@ function helper_menu {
 
 case $1 in
 
-  _bash | _correct-site-url | _create-admin-user | _export-post |              \
+  _bash | _script | _correct-site-url | _create-admin-user | _export-post |    \
   _import-post | _install-importer |                                           \
   _remove-contact-form-recaptcha-integration | _restore-media |                \
   _restore-media | _restore-plugin | _restore-theme | _exit)
@@ -74,6 +74,18 @@ case $command in
   _bash)
 
     gosu www-data bash $2
+
+  ;;
+
+  _script)
+
+    if [ -f "/scripts/$2.sh" ]; then
+      gosu www-data bash "/scripts/$2.sh"
+    elif [ -f "/varilink-scripts/$2.sh" ]; then
+      gosu www-data bash "/varilink-scripts/$2.sh"
+    else
+      echo 'The script does NOT exist'
+    fi
 
   ;;
 
