@@ -8,8 +8,6 @@
 
 ---
 
-version: "3.6"
-
 # Environment settings that are common to the wp and wp-cli services.
 x-wp-env: &wp-env
   WORDPRESS_DB_HOST: ${COMPOSE_PROJECT_NAME}_db
