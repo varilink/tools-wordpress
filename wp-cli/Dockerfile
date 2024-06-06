@@ -35,6 +35,7 @@ RUN                                                                            \
   wget --output-document=/usr/local/bin/wp ${PHAR}                          && \
   chmod +x /usr/local/bin/wp
 
+COPY --chown=www-data:www-data config.yml /var/www/.wp-cli/
 COPY docker-entrypoint.sh /
 
 ENTRYPOINT ["bash", "/docker-entrypoint.sh"]

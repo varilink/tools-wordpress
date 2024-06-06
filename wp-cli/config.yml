@@ -1,0 +1,11 @@
+# ------------------------------------------------------------------------------
+# wp-cli/config.yml
+# ------------------------------------------------------------------------------
+
+# Configuration file for WP-CLI.
+
+---
+
+# Add mod_rewrite module so that we can regenerate a .htaccess file with WP-CLI.
+apache_modules:
+  - mod_rewrite
