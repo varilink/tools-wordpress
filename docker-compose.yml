@@ -27,8 +27,10 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME}
 
     depends_on:
-      - db
-      - proxy
+      db:
+        condition: service_healthy
+      proxy:
+        condition: service_started
 
     environment:
       <<: *wp-env
@@ -48,6 +50,10 @@ services:
     image: mariadb:${MARIADB_TAG:-latest}
 
     container_name: ${COMPOSE_PROJECT_NAME}_db
+
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect"]
+      start_period: 30s
 
     environment:
       - MYSQL_DATABASE=wordpress
