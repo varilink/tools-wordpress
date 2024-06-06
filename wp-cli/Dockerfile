@@ -31,7 +31,7 @@ RUN                                                                            \
     wget                                                                    && \
   mkdir -p /var/www/.wp-cli                                                 && \
   chown www-data:www-data /var/www/.wp-cli                                  && \
-  useradd --create-home --uid ${UID} posts                                  && \
+  useradd --create-home --uid ${UID} wxr                                    && \
   wget --output-document=/usr/local/bin/wp ${PHAR}                          && \
   chmod +x /usr/local/bin/wp
 
