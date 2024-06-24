@@ -1,9 +1,11 @@
-# wp-cli/docker-entrypoint.sh
 # ------------------------------------------------------------------------------
+# wp-cli/docker-entrypoint.sh
 # ------------------------------------------------------------------------------
 
 # Wrapper script to WP-CLI that provides several shortcut "helper scripts" as
 # well as the native fuctionality of WP-CLI itself.
+
+# ------
 
 function helper_menu {
 
@@ -12,6 +14,7 @@ function helper_menu {
   echo 'Helpers available'
   PS3='Helper? '
   select helper in                                                             \
+    _bash                                                                      \
     _correct-site-url                                                          \
     _create-admin-user                                                         \
     _export-post                                                               \
@@ -77,30 +80,12 @@ case $command in
 
   ;;
 
-  _script)
-
-    if [ -f "/scripts/$2.sh" ]; then
-      gosu www-data bash "/scripts/$2.sh"
-    elif [ -f "/varilink-scripts/$2.sh" ]; then
-      gosu www-data bash "/varilink-scripts/$2.sh"
-    else
-      echo 'The script does NOT exist'
-    fi
-
-  ;;
-
   _correct-site-url)
 
-    echo "Change the site's URL in the database to match the container URL"
-    IFS=':'
-    read -a environments <<< "$ENVIRONMENTS"
-    for environment in "${environments[@]}"
-    do
-      echo                                                                     \
-        "Replace https://$environment.$DOMAIN with http://$COMPOSE_PROJECT_NAME"
-      gosu www-data wp search-replace --report-changed-only      \
-        https://$environment.$DOMAIN http://$COMPOSE_PROJECT_NAME
-    done
+    read -p 'Enter the backup subdomain ("dev", "test" or "www"): ' subdomain
+    echo $subdomain
+    gosu www-data wp search-replace --report-changed-only                      \
+      https://$subdomain.$DOMAIN http://$COMPOSE_PROJECT_NAME
 
   ;;
 
@@ -118,18 +103,18 @@ case $command in
 
   _export-post)
 
-    cd /posts
+    cd /wxr
     read -p 'Post name: ' post_name
 
     # NOTE: The post list requires that the post is published
-    gosu posts wp export                                                       \
+    gosu wxr wp export                                                         \
       --path=/var/www/html/                                                    \
       --post__in="$(                                                           \
-          wp post list                                                         \
-            --allow-root                                                       \
+          gosu wxr wp post list                                                \
             --path=/var/www/html/                                              \
             --name=$post_name                                                  \
             --format=ids                                                       \
+            --post_type=page,post                                              \
         )"                                                                     \
       --filename_format=${post_name}.xml
 
@@ -139,7 +124,7 @@ case $command in
 
     echo 'Post files available'
     PS3='Post file? '
-    select post_file in `ls /posts` exit
+    select post_file in `cd /wxr && ls *.xml` exit
     do
 
       if [[ "$post_file" != 'exit' ]]
@@ -147,7 +132,7 @@ case $command in
 
         gosu www-data wp import                                                \
           --path=/var/www/html/                                                \
-          /posts/${post_file}                                                  \
+          /wxr/${post_file}                                                    \
           --authors=skip
 
       fi
@@ -171,115 +156,6 @@ case $command in
     # Remove Contact Form 7 integration with reCAPTCHA
 
     gosu www-data wp option patch delete wpcf7 recaptcha
-
-  ;;
-
-  _restore-media)
-
-    # Find the archive file of website's home folder
-    archive=$(find /backup -name "*.tar.gz")
-    echo "Archive file found at $archive"
-
-    if [[ ! -e /var/www/html/wp-content/uploads ]]
-      then
-        mkdir -p /var/www/html/wp-content/uploads
-    fi
-
-    gosu www-data tar                                                          \
-      --extract                                                                \
-      --file=$archive                                                          \
-      --directory=/var/www/html/wp-content/uploads                             \
-      --transform="s~.*wp-content/uploads/~~"                                  \
-      --wildcards                                                              \
-      "**wp-content/uploads/**"
-
-  ;;
-
-  _restore-plugin)
-
-    # Find the archive file of website's home folder
-    archive=$(find /backup -name "*.tar.gz")
-    echo "Archive file found at $archive"
-
-    for path in                                                                \
-      $(tar --list --file=$archive --wildcards "**wp-content/plugins/")
-    do
-      regex='wp-content/plugins/([a-z0-9-]+)/$'
-      if [[ $path =~ $regex ]]
-        then
-          if [[ -z "$plugins" ]]
-            then
-              plugins=${BASH_REMATCH[1]}
-            else
-              plugins="$plugins ${BASH_REMATCH[1]}"
-          fi
-      fi
-    done
-
-    echo 'Plugins available'
-    PS3='Plugin to restore? '
-    select plugin in $plugins
-    do
-      if [[ -n $plugin ]]
-        then
-          set -- "$plugin"
-          break
-        else
-          echo 'Invalid selection, enter the number of a plugin in the list'
-      fi
-    done
-
-    gosu www-data tar                                                          \
-      --extract                                                                \
-      --file=$archive                                                          \
-      --directory=/var/www/html/wp-content/plugins                             \
-      --transform="s~.*wp-content/themes/$plugin/~$plugin/~"                   \
-      --wildcards                                                              \
-      "**wp-content/plugins/$plugin/"
-
-  ;;
-
-  _restore-theme)
-
-    # Find the archive file of website's home folder
-    archive=$(find /backup -name "*.tar.gz")
-    echo "Archive file found at $archive"
-
-    for path in                                                                \
-      $(tar --list --file=$archive --wildcards "**wp-content/themes/")
-    do
-      regex='wp-content/themes/([a-z0-9-]+)/$'
-      if [[ $path =~ $regex ]]
-        then
-          if [[ -z "$themes" ]]
-            then
-              themes=${BASH_REMATCH[1]}
-            else
-              themes="$themes ${BASH_REMATCH[1]}"
-          fi
-      fi
-    done
-
-    echo 'Themes available'
-    PS3='Theme to restore? '
-    select theme in $themes
-    do
-      if [[ -n $theme ]]
-        then
-          set -- "$theme"
-          break
-        else
-          echo 'Invalid selection, enter the number of a theme in the list'
-      fi
-    done
-
-    gosu www-data tar                                                          \
-      --extract                                                                \
-      --file=$archive                                                          \
-      --directory=/var/www/html/wp-content/themes                              \
-      --transform="s~.*wp-content/themes/$theme/~$theme/~"                     \
-      --wildcards                                                              \
-      "**wp-content/themes/$theme/"
 
   ;;
 
@@ -332,6 +208,147 @@ case $command in
 
   ;;
 
+  _restore-media)
+
+    # Find the archive file of website's home folder
+    archive=$(find /backup -name "*.tar.gz")
+    echo "Archive file found at $archive"
+
+    if [[ ! -e /var/www/html/wp-content/uploads ]]
+      then
+        mkdir -p /var/www/html/wp-content/uploads
+    fi
+
+    gosu www-data tar                                                          \
+      --extract                                                                \
+      --file=$archive                                                          \
+      --directory=/var/www/html/wp-content/uploads                             \
+      --transform="s~.*wp-content/uploads/~~"                                  \
+      --wildcards                                                              \
+      "**wp-content/uploads/**"
+
+  ;;
+
+  _restore-plugin)
+
+    # This helper restores the files associated with a single plugin that is
+    # selected by the user from a WordPress filesystem backup to the project's
+    # wordpress volume.
+
+    # Find the archive file of website's home folder
+    archive=$(find /backup -name "*.tar.gz")
+    echo "Archive file found at $archive"
+
+    # List every file in the archive in the wp-contents/plugins/ directory.
+    for path in                                                                \
+      $(tar --list --file=$archive --wildcards "**wp-content/plugins/")
+    do
+      regex='wp-content/plugins/([a-z0-9-]+)/$'
+      if [[ $path =~ $regex ]]
+        # The file is the top-level directory for a plugin.
+        then
+          if [[ -z "$plugins" ]]
+            then
+              # Start the variable plugins that contains a list of plugins.
+              plugins=${BASH_REMATCH[1]}
+            else
+              # Append the latest plugin found to the list of plugins.
+              plugins="$plugins ${BASH_REMATCH[1]}"
+          fi
+      fi
+    done
+
+    # Prompt the user for the plugin that they wish to restore.
+    echo 'Plugins available'
+    PS3='Plugin to restore? '
+    select plugin in $plugins
+    do
+      if [[ -n $plugin ]]
+        then
+          set -- "$plugin"
+          break
+        else
+          echo 'Invalid selection, enter the number of a plugin in the list'
+      fi
+    done
+
+    # Restore the selected plugin.
+    gosu www-data tar                                                          \
+      --extract                                                                \
+      --file=$archive                                                          \
+      --directory=/var/www/html/wp-content/plugins                             \
+      --transform="s~.*wp-content/plugins/~~"                                  \
+      --wildcards                                                              \
+      "**wp-content/plugins/$plugin/**"
+
+  ;;
+
+  _restore-theme)
+
+    # This helper restores the files associated with a single theme that is
+    # selected by the user from a WordPress filesystem backup to the project's
+    # wordpress volume.
+
+    # Find the archive file of website's home folder
+    archive=$(find /backup -name "*.tar.gz")
+    echo "Archive file found at $archive"
+
+    # List every file in the archive in the wp-contents/themes/ directory.
+    for path in                                                                \
+      $(tar --list --file=$archive --wildcards "**wp-content/themes/")
+    do
+      regex='wp-content/themes/([a-z0-9-]+)/$'
+      if [[ $path =~ $regex ]]
+        # The file is the top-level directory for a theme.
+        then
+          if [[ -z "$themes" ]]
+            then
+              # Start the variable plugins that contains a list of themes.
+              themes=${BASH_REMATCH[1]}
+            else
+              # Append the latest theme found to the list of themes.
+              themes="$themes ${BASH_REMATCH[1]}"
+          fi
+      fi
+    done
+
+    # Prompt the user for the theme that they wish to restore.
+    echo 'Themes available'
+    PS3='Theme to restore? '
+    select theme in $themes
+    do
+      if [[ -n $theme ]]
+        then
+          set -- "$theme"
+          break
+        else
+          echo 'Invalid selection, enter the number of a theme in the list'
+      fi
+    done
+
+    # Restore the selected theme.
+    gosu www-data tar                                                          \
+      --extract                                                                \
+      --file=$archive                                                          \
+      --directory=/var/www/html/wp-content/themes                              \
+      --transform="s~.*wp-content/themes/$theme/~$theme/~"                     \
+      --wildcards                                                              \
+      "**wp-content/themes/$theme/"
+
+  ;;
+
+  _script)
+
+    if [ -f "/scripts/$2.sh" ]; then
+      gosu www-data bash "/scripts/$2.sh"
+    elif [ -f "/varilink-scripts/$2.sh" ]; then
+      gosu www-data bash "/varilink-scripts/$2.sh"
+    else
+      echo 'The script does NOT exist'
+    fi
+
+  ;;
+
   _exit)
 
     # The user has most probably entered the option number for "_exit" in the
@@ -341,6 +358,10 @@ case $command in
   ;;
 
   *)
+
+    # Just pass the parameters passed to the wp-cli Docker Compose service
+    # directly through to the WP-CLI command. This gives direct access to the
+    # native WP-CLI functionality, bypassing the helpers above.
 
     gosu www-data wp "$@"
 
