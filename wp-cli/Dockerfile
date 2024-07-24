@@ -7,7 +7,8 @@
 
 # Note that we don't start with the cli image from wordpress on Docker Hub. It
 # is based on BusyBox and I need more shell command capability than that.
-FROM debian:bookworm
+ARG PHP_TAG
+FROM php:${PHP_TAG}
 LABEL maintainer="david.williamson@varilink.co.uk"
 # The default UID for the posts user. We use this user when we run wp-cli to
 # export posts back to the Docker host so we set it to the UID of the user on
@@ -24,11 +25,10 @@ RUN                                                                            \
     gosu                                                                       \
     jq                                                                         \
     less                                                                       \
-    php                                                                        \
-    php-imagick                                                                \
-    php-mysql                                                                  \
-    php-xml                                                                    \
-    wget                                                                    && \
+    libpng-dev                                                                 \
+    wget                                                                       \
+    zlib1g-dev                                                              && \
+  docker-php-ext-install gd mysqli                                          && \
   mkdir -p /var/www/.wp-cli                                                 && \
   chown www-data:www-data /var/www/.wp-cli                                  && \
   useradd --create-home --uid ${UID} wxr                                    && \

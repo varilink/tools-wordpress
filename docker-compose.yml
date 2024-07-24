@@ -61,7 +61,12 @@ services:
 
   wp-cli:
 
-    build: ./tools/wordpress/wp-cli
+    build:
+      context: ./tools/wordpress/wp-cli
+      args:
+        PHP_TAG: ${PHP_TAG:-latest}
+
+    image: varilink/tools/wordpress/wp-cli:${PHP_TAG:-latest}
 
     environment:
       COMPOSE_PROJECT_NAME:
