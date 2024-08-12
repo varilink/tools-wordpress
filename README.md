@@ -116,7 +116,7 @@ And select the required plugin when prompted to do so.
 
 ### The wp-cli service and its built-in helpers
 
-The wp-cli access provides the [WP-CLI command line interface for WordPress](https://wp-cli.org/) accessing the same WordPress installation folder as does the wordpress service and with access to the database hosted by the db service. This can be confirmed within your project via the command `docker-compose run --rm wp-cli --help`, which of course will display the WP CLI command's help.
+The wp-cli service provides the [WP-CLI command line interface for WordPress](https://wp-cli.org/) accessing the same WordPress installation folder as does the wordpress service and with access to the database hosted by the db service. This can be confirmed within your project via the command `docker-compose run --rm wp-cli --help`, which of course will display the WP CLI command's help.
 
 The service also wraps the WP CLI with helper shortcuts. These are invoked by passing it commands that are prefixed with an underscore to avoid any clash with a built-in WP CLI command. These helpers can be invoked by passing the helper name to the `wp-cli` service; for example to run the [_correct-site-url](#_correct-site-url) helper:
 
@@ -132,11 +132,11 @@ docker-compose run --rm wp-cli _
 
 Here is guidance on each of the defined helpers:
 
-### _bash
+#### _bash
 
 Opens a bash shell within a *wp-cli* service container as the *www-data* user and in the root path of the WordPress installation.
 
-### _correct-site-url
+#### _correct-site-url
 
 Any backup will have been taken from one of the environments in use for the website. This means that the links stored in the database associated with that backup will reflect this, they will start with, for example, http://dev.example.com, https://test.example.com or https://www.example.com.
 
@@ -153,13 +153,13 @@ wp-cli:
 
 Note that if you don't run this helper prior to accessing a website that you've restored from backup locally, then this will trigger an immediate redirect to URL associated with the backup. That redirect will be remembered in the browsers cache. So, it's important to run this helper before you try to access the website locally otherwise you will need to clear the remembered redirect.
 
-### _create-admin-user
+#### _create-admin-user
 
 This creates a user within the local WordPress site with the name `admin`, the email address `admin@localhost.localdomain`, the role `administrator` and the password `password`. The insecurity of the user's credentials does not matter since the local WordPress site is only accessible on the user's desktop.
 
 This user can then be used to work in the WordPress dashboard locally, with administrator privilege, without having to know any of the logins that were restored from backup.
 
-### _export-post
+#### _export-post
 
 This helper allows you to export a post of the post types page or post as a WXR format. It prompts for the name of the post to export, which must correspond to the `post_name` attribute of the post that you want to export.
 
@@ -167,31 +167,31 @@ The post will be exported as a `.xml` file with the name corresponding to `post_
 
 These exported WXR files provide a means to persist posts that you're working on outside of the *db* service's container.
 
-### _import-post
+#### _import-post
 
 Just as the [_export-post](#_export-post) helper can be used to export posts to the `wxr` folder within your project, this helper can be used to import WXR files from within that `wxr` folder. It prompts you to select from a list of the `.xml` files there.
 
 Note that a precursor to running this helper is that the `wordpress-importer` plugin is installed and activated. The [_install-importer](#_install-importer) helper can be used to do this.
 
-### _install-importer
+#### _install-importer
 
 This is a very simple helper that wraps the WP CLI tool's `plugin install` command to specifically install the `wordpress-importer` plugin.
 
-### _remove-contact-form-recaptcha-integration
+#### _remove-contact-form-recaptcha-integration
 
 I sometimes use the `contact-form-7` plugin with reCAPTCHA integration enabled. Where this is the case, if you restore a website from a backup locally then that integration will be reflected in the `contact-form-7` plugin options. However, this integration is not appropriate when running the website on the local desktop. This plugin disables that integration.
 
-### _restore-from-backup
+#### _restore-from-backup
 
 This helper restores **all** the WordPress files from the backup into the project's *wordpress* volume. The circumstances in which you might want to use this helper are not routine.
 
-### _restore-media
+#### _restore-media
 
 When I am developing a custom theme this can include custom media. I upload that custom media to the WordPress media library with the option to organise uploads into year/month folders disabled. This results in the associated media files being stored in the `wp-content/uploads` folder within the WordPress files hierarchy.
 
 If you restore a WordPress site locally then the restored database will contain the record of the media files associated with theme, but the filesystem will not until you run this helper. It restores media files within the `wp-content/uploads` folder in the backup into the *wordpress* volume for the project.
 
-### _restore-plugin
+#### _restore-plugin
 
 When you restore a website from backup locally, the local database will then reflect the plugins that were active in the website that the backup was taken from. However the associated plugin files will not be present in your project's *wordpress* volume until you use this plugin to restore them from the backup also.
 
@@ -199,11 +199,11 @@ You may not wish to restore all the plugins because some of them may not be appr
 
 You may have to activate a plugin that is restored if WordPress has deactivated it because, prior to having restored the plugin, WordPress couldn't find any files for it.
 
-### _restore-theme
+#### _restore-theme
 
 This helper restores the files for a single selected from the WordPress filesystem backup into the project's *wordpress* volume. It detects the themes that are present in the backup and prompts the user to select which one to us. The circumstances in which you might need to use this helper are not routine.
 
-### _script
+#### _script
 
 This helper executes a bash script. In this context that's a bash script that executes WP-CLI commands. The *wp-cli* Docker Compose service defined by this repository maps two local directories as volumes; these are the `wordpress/scripts` and `wordpress/varilink-scripts` directories, relative to your project's root directory. You should use `wordpress/varilink-scripts` as the path of a Git submodule in your project which maps to the Varilink [Libraries - WP CLI Scripts](https://github.com/varilink/libraries-wp_cli_scripts) repository.
 
