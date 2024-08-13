@@ -92,5 +92,15 @@ services:
       PMA_USER: root
       PMA_PASWORD: ''
 
+  wp-css:
+
+    build:
+      context: ./tools/wordpress/wp-css
+
+    image: varilink/tools/wordpress/wp-css
+
+    volumes:
+      - ./wordpress/theme/:/theme/
+
 volumes:
   wordpress:

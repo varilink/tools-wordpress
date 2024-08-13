@@ -12,6 +12,7 @@ This repository provides tooling for the development and testing of WordPress si
 | -------------------- | ------------------------------------------------------ |
 | `docker-compose.yml` | Docker Compose project configuration.                  |
 | `wp-cli/`            | Artefacts used by the `wp-cli` Docker Compose service. |
+| `wp-css/`            | Artefacts used by the `wp-css` Docker Compose service. |
 
 ## Usage
 
@@ -216,3 +217,45 @@ docker-compose run --rm _script SCRIPT_NAME
 Will look for a file *SCRIPT_NAME*.sh, first in `wordpress/scripts` and then, if it doesn't find it there, in `wordpress/varilink-scripts` and will execute it.
 
 The idea here is to make a library of WP-CLI scripts available to run in your project that combines generic scripts from the [Libraries - WP CLI Scripts](https://github.com/varilink/libraries-wp_cli_scripts) repository with project specific scripts defined within your project itself. Those project specific scripts can either override or supplement the generic scripts.
+
+### The wp-css service
+
+The *wp-css* service provides the means to generate custom CSS for the theme using Sass, both at a global level and for block types, and to insert that generated CSS into the theme's `theme.json` file. In order to use it you need the following content within the `theme/` directory of your WordPress project.
+
+- `theme/scss/`
+
+  This directory should contain `.scss` files that require Sass pre-processing and possibly `.css` files, which don't require Sass pre-processing. If you want to set global custom CSS for your theme, then one of the files must be either `theme/scss/global.scss` or `theme/scss/global.css`.
+
+  You can also define block specific custom CSS using a directory structure that maps to the block namespaces and names for the blocks you are targetting; for example, to define custom CSS for the `core/list-item` block you would must use a file `theme/scss/blocks/core/list-item.scss` or `theme/scss/blocks/core/list-item.css`.
+
+  In order for these block specific SCSS or CSS files to be syntactically correct, you should wrap the rules inside them within a dummy, custom selector; for example:
+
+```css
+block-style {
+  list-style-type: none;
+}
+```
+
+- `theme/css/`
+
+  This directory will hold the custom CSS generated using Sass. Since the CSS files within it are generated content they do not need to be tracked using Git. However, the directory structure within this directory must match that within `theme/scss`.
+
+To use the *wp-css*, first create the SCSS and CSS files within the correct directory structure within `theme/scss/`. You can then use the Varilink [Tools - NPM](https://github.com/varilink/tools-npm) repository to install the `npm` and `npx` services into your project repository as a tool, which you can then use to install the `sass` package to generate CSS from your SASS.
+
+It's a good idea to first generate the CSS in expanded style to manually preview it:
+
+```sh
+docker-compose run --rm npx sass --no-source-map scss:css
+```
+
+When you're happy with the CSS, then you must regenerate it ready for insertion into your `theme/theme.json` file, this time with the `--no-charset` and `--style=compressed` options set for the `sass` command:
+
+```sh
+docker-compose run --rm npx sass --no-charset --no-source-map --style=compressed scss:css
+```
+
+This command will then parse your project's `theme/theme.json` file, remove any `css` attributes that it already contains, and insert `css` attributes containing the CSS from the `.css` files within the `theme/css/` directory at the appropriate places in the `theme/theme.json` file's JSON structure:
+
+
+
+A working example of the *wp-css* service in use in a project can be found in the Varilink [Website - Docker](https://github.com/varilink/website-docker) repository.
