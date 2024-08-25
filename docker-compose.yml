@@ -70,6 +70,7 @@ services:
 
     environment:
       COMPOSE_PROJECT_NAME:
+      DOMAIN:
       <<: *wp-env
 
     volumes:
