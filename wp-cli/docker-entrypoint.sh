@@ -21,6 +21,7 @@ function helper_menu {
     _import-post                                                               \
     _install-importer                                                          \
     _remove-contact-form-recaptcha-integration                                 \
+    _restore-from-backup                                                       \
     _restore-media                                                             \
     _restore-plugin                                                            \
     _restore-theme                                                             \
