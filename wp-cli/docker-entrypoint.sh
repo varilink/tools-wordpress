@@ -40,10 +40,19 @@ function helper_menu {
 
 case $1 in
 
-  _bash | _script | _correct-site-url | _create-admin-user | _export-post |    \
-  _import-post | _install-importer |                                           \
-  _remove-contact-form-recaptcha-integration | _restore-media |                \
-  _restore-media | _restore-plugin | _restore-theme | _exit)
+  _bash |                                                                      \
+  _correct-site-url |                                                          \
+  _create-admin-user |                                                         \
+  _export-post |                                                               \
+  _import-post |                                                               \
+  _install-importer |                                                          \
+  _remove-contact-form-recaptcha-integration |                                 \
+  _restore-from-backup |                                                       \
+  _restore-media |                                                             \
+  _restore-plugin |                                                            \
+  _restore-theme |                                                             \
+  _script |                                                                    \
+  _exit)
 
     command=$1
 
